@@ -34,6 +34,20 @@ module RailRoady
         raise NotImplementedError
       end
     end
+    
+    def self.exclude_active_record
+      # Make it opt dependant
+      regex = 's/^\s+"ActiveRecord::Base.*$//g'
+      case RbConfig::CONFIG['host_os']
+      when /linux|cygwin|mingw/
+        return "sed -r '#{regex}'"
+      when /mac|darwin|bsd/
+        return "sed -E '#{regex}'"
+      else
+        raise NotImplementedError
+      end
+
+    end
 
   end
 end
@@ -45,6 +59,7 @@ namespace :diagram do
   @CONTROLLERS_ALL    = RailRoady::RakeHelpers.full_path("controllers_complete.#{RailRoady::RakeHelpers.format}").freeze
   @CONTROLLERS_BRIEF  = RailRoady::RakeHelpers.full_path("controllers_brief.#{RailRoady::RakeHelpers.format}").freeze
   @SED                = RailRoady::RakeHelpers.sed
+  @EXCLUDE_AR         = RailRoady::RakeHelpers.exclude_active_record
 
   namespace :setup do
     desc 'Perform any setup needed for the gem'
@@ -69,6 +84,12 @@ namespace :diagram do
       sh "railroady -bilamM | #{@SED} | dot -T#{RailRoady::RakeHelpers.format} > #{f}"
     end
 
+    desc 'Generates an very abbreviated class diagram for all models, hiding the original ActiveRecord'
+    task :very_brief do
+      f = @MODELS_BRIEF
+      puts "Generating #{f}"
+      sh "railroady -bilamM | #{@SED} | #{@EXCLUDE_AR} | dot -T#{RailRoady::RakeHelpers.format} > #{f}"
+    end
   end
 
   namespace :controllers do
