@@ -51,6 +51,7 @@ else
 end
 
 diagram.process
+ActiveRecord::Base.logger.level = 1 if defined?(ActiveRecord)
 diagram.generate
 
 Dir.chdir(old_dir)
